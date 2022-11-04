@@ -11,7 +11,8 @@ func main() {
 	producer := NewKafkaProducer()
 	defer producer.Close()
 
-	err := Publish("Hello World", "test", producer, nil, deliveryChan)
+	// key guaranties that the message will be delivered to the same partition
+	err := Publish("Transfer 10", "test", producer, []byte("transference"), deliveryChan)
 	if err != nil {
 		panic(err)
 	}
@@ -22,7 +23,10 @@ func main() {
 
 func NewKafkaProducer() *kafka.Producer {
 	configMap := &kafka.ConfigMap{
-		"bootstrap.servers": "kafka:9092",
+		"bootstrap.servers":   "kafka:9092",
+		"delivery.timeout.ms": "0",
+		"acks":                "all",  // 0 -> no acknowledge , 1 -> just acknowledge of leader, all -> acknowledge of leader and replicas
+		"enable.idempotence":  "true", // guarantee that messages are produced only once (default is false)
 	}
 
 	p, err := kafka.NewProducer(configMap)
